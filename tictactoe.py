@@ -45,7 +45,7 @@ def actions(board):
     possible_actions = set()
     for i, row in enumerate(board):
         for j, column in enumerate(row):
-            if column == None:
+            if column == EMPTY:
                 possible_actions.add((i, j))
     return possible_actions
 
@@ -55,9 +55,8 @@ def result(board, action):
     Returns the board that results from making move (i, j) on the board.
     """
     # Deep copy the current board to not manipulate the input board
-    resulting_board = copy.deepcopy(board)
     # Raise an exception if the intended spot is already taken or out of the board
-    if resulting_board[action[0]][action[1]] is not None or action[0] not in range(0,3) or action[1] not in range(0,3):
+    if action[0] not in range(0,3) or action[1] not in range(0,3) or board[action[0]][action[1]] is not EMPTY:
         # More complex way to raise exception
         # try:
         #     raise Exception
@@ -70,8 +69,8 @@ def result(board, action):
         # Simpler way to raise exception
         raise Exception("Action not valid. The spot already has a mark or is out of the board. Try another action")
     # If the move is legal, sets the current player's mark at the corresponding cell
-    current_player = player(board)
-    resulting_board[action[0]][action[1]] = current_player
+    resulting_board = copy.deepcopy(board)
+    resulting_board[action[0]][action[1]] = player(board)
     return resulting_board
 
 
@@ -150,22 +149,26 @@ def minimax(board):
     if board == initial_state():
         return (1,1)
 
-    best_action = {'action': False, 'value': False}
+    best_action = {'action': None, 'value': None}
 
     if player(board) == 'X':
         for action in actions(board):
-            action_value = max_value(result(board, action), 1)
-            if action_value > best_action['value'] or best_action['value'] is None:
+            action_value = min_value(result(board, action), 1)
+            if best_action['value'] is None or action_value > best_action['value']:
                 best_action['action'] = action
                 best_action['value'] = action_value
-            print(best_action)
+                # Small optimization to return as soon as a value of 1 is found (max possible value)
+                if best_action['value'] == 1:
+                    return best_action['action']
     else:
         for action in actions(board):
-            action_value = min_value(result(board, action), 1)
-            if action_value < best_action['value'] or best_action['value'] is None:
+            action_value = max_value(result(board, action), 1)
+            if best_action['value'] is None or action_value < best_action['value']:
                 best_action['action'] = action
                 best_action['value'] = action_value
-            print(best_action)
+                # Small optimization to return as soon as a value of 1 is found (max possible value)
+                if best_action['value'] == -1:
+                    return best_action['action']
     return best_action['action']
 
 
@@ -175,7 +178,6 @@ def max_value(board, num_of_turns):
     value = float('-inf')
     for action in actions(board):
         value = max(value, min_value(result(board, action), num_of_turns + 1))
-        # print('running max_value with board = ', board, ' value is ', value)
     return value
 
 
@@ -185,6 +187,4 @@ def min_value(board, num_of_turns):
     value = float('inf')
     for action in actions(board):
         value = min(value, max_value(result(board, action), num_of_turns + 1))
-        # print('running max_value with board = ', board, ' value is ', value)
     return value
-
