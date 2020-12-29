@@ -153,7 +153,7 @@ def minimax(board):
 
     if player(board) == 'X':
         for action in actions(board):
-            action_value = min_value(result(board, action), 1)
+            action_value = min_value(result(board, action), 1, float('-inf'), float('inf'))
             if best_action['value'] is None or action_value > best_action['value']:
                 best_action['action'] = action
                 best_action['value'] = action_value
@@ -162,7 +162,7 @@ def minimax(board):
                     return best_action['action']
     else:
         for action in actions(board):
-            action_value = max_value(result(board, action), 1)
+            action_value = max_value(result(board, action), 1, float('-inf'), float('inf'))
             if best_action['value'] is None or action_value < best_action['value']:
                 best_action['action'] = action
                 best_action['value'] = action_value
@@ -172,19 +172,30 @@ def minimax(board):
     return best_action['action']
 
 
-def max_value(board, num_of_turns):
+def max_value(board, num_of_turns, alpha, beta):
     if terminal(board):
         return utility(board) / num_of_turns
     value = float('-inf')
     for action in actions(board):
-        value = max(value, min_value(result(board, action), num_of_turns + 1))
+        # the value is the max score possible of all the moves considering that O will minimize the resulting board
+        value = max(value, min_value(result(board, action), num_of_turns + 1, alpha, beta))
+        # set alpha to the max score possible for the turn
+        alpha = max(alpha, value)
+        # assuming each player plays their best move, X's current best value (alpha) is bounded by O's best value in the next turn (beta) 
+        if alpha > beta:
+            break
     return value
 
 
-def min_value(board, num_of_turns):
+def min_value(board, num_of_turns, alpha, beta):
     if terminal(board):
         return utility(board) / num_of_turns
     value = float('inf')
     for action in actions(board):
-        value = min(value, max_value(result(board, action), num_of_turns + 1))
+        value = min(value, max_value(result(board, action), num_of_turns + 1, alpha, beta))
+        # set alpha to the min score possible for the turn
+        beta = min(beta, value)
+        # assuming each player plays their best move, O's current best value (beta) is bounded by X's best value in the next turn (alpha) 
+        if beta < alpha:
+            break
     return value
